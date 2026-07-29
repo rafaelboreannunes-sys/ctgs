@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WearCare - Gestão de Roupas & Consertos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+
+    <header class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide flex items-center gap-2">
+                    🧵 WearCare
+                </h1>
+                <p class="text-indigo-200 text-sm">Contagem de peças & Gestão de consertos</p>
+            </div>
+            <div id="stats-summary" class="hidden md:flex gap-4 bg-indigo-700 px-4 py-2 rounded-lg text-sm">
+                </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-1 h-fit">
+            <h2 class="text-lg font-semibold mb-4 text-slate-700 flex items-center gap-2">
+                ➕ Cadastrar Peça
+            </h2>
+            <form id="clothing-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Nome/Descrição da Peça</label>
+                    <input type="text" id="item-name" required placeholder="Ex: Calça Jeans Levis" 
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Categoria</label>
+                    <select id="item-category" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        <option value="Camisetas/Blusas">Camisetas / Blusas</option>
+                        <option value="Calças/Bermudas">Calças / Bermudas</option>
+                        <option value="Casacos/Jaquetas">Casacos / Jaquetas</option>
+                        <option value="Vestidos/Saias">Vestidos / Saias</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Status da Peça</label>
+                    <select id="item-status" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" onchange="toggleRepairField()">
+                        <option value="ok">Em bom estado</option>
+                        <option value="needs_repair">Precisa de conserto</option>
+                    </select>
+                </div>
+
+                <div id="repair-details-container" class="hidden">
+                    <label class="block text-sm font-medium text-amber-700 mb-1">Detalhes do Conserto</label>
+                    <input type="text" id="repair-details" placeholder="Ex: Trocar zíper, fazer bainha..." 
+                        class="w-full px-3 py-2 border border-amber-300 bg-amber-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                </div>
+
+                <button type="submit" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition-colors text-sm shadow">
+                    Adicionar ao Guardar-Roupa
+                </button>
+            </form>
+        </section>
+
+        <section class="lg:col-span-2 space-y-6">
+            
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Total de Peças</span>
+                    <p id="count-total" class="text-2xl font-bold text-slate-800">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <span class="text-xs font-semibold text-emerald-500 uppercase">Em Bom Estado</span>
+                    <p id="count-ok" class="text-2xl font-bold text-emerald-600">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <span class="text-xs font-semibold text-amber-500 uppercase">Para Conserto</span>
+                    <p id="count-repair" class="text-2xl font-bold text-amber-600">0</p>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="font-semibold text-slate-700">Meu Inventário</h3>
+                <div class="flex gap-2">
+                    <button onclick="setFilter('all')" id="btn-filter-all" class="px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">Todas</button>
+                    <button onclick="setFilter('needs_repair')" id="btn-filter-repair" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Apenas Consertos</button>
+                </div>
+            </div>
+
+            <div id="items-list" class="space-y-3">
+                </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Estado da aplicação com dados de exemplo
+        let clothes = [
+            { id: 1, name: "Jaqueta de Couro", category: "Casacos/Jaquetas", status: "needs_repair", repair: "Trocar o zíper principal" },
+            { id: 2, name: "Calça Alfaiataria", category: "Calças/Bermudas", status: "ok", repair: "" },
+            { id: 3, name: "Camisa Branca", category: "Camisetas/Blusas", status: "needs_repair", repair: "Ajustar manga e costura lateral" }
+        ];
+
+        let currentFilter = 'all';
+
+        // Elementos do DOM
+        const form = document.getElementById('clothing-form');
+        const nameInput = document.getElementById('item-name');
+        const categoryInput = document.getElementById('item-category');
+        const statusInput = document.getElementById('item-status');
+        const repairDetailsContainer = document.getElementById('repair-details-container');
+        const repairDetailsInput = document.getElementById('repair-details');
+        const itemsList = document.getElementById('items-list');
+
+        // Exibir/Ocultar campo de detalhes do conserto
+        function toggleRepairField() {
+            if (statusInput.value === 'needs_repair') {
+                repairDetailsContainer.classList.remove('hidden');
+            } else {
+                repairDetailsContainer.classList.add('hidden');
+                repairDetailsInput.value = '';
+            }
+        }
+
+        // Adicionar nova peça
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const newItem = {
+                id: Date.now(),
+                name: nameInput.value,
+                category: categoryInput.value,
+                status: statusInput.value,
+                repair: statusInput.value === 'needs_repair' ? repairDetailsInput.value : ''
+            };
+
+            clothes.push(newItem);
+            form.reset();
+            toggleRepairField();
+            render();
+        });
+
+        // Alternar status da peça (Consertada / Precisa de Conserto)
+        function toggleStatus(id) {
+            clothes = clothes.map(item => {
+                if (item.id === id) {
+                    const newStatus = item.status === 'ok' ? 'needs_repair' : 'ok';
+                    return { 
+                        ...item, 
+                        status: newStatus, 
+                        repair: newStatus === 'needs_repair' ? 'Ajustes gerais' : '' 
+                    };
+                }
+                return item;
+            });
+            render();
+        }
+
+        // Remover peça
+        function deleteItem(id) {
+            clothes = clothes.filter(item => item.id !== id);
+            render();
+        }
+
+        // Definir Filtro
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.getElementById('btn-filter-all').className = filter === 'all' 
+                ? 'px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700' 
+                : 'px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200';
+            
+            document.getElementById('btn-filter-repair').className = filter === 'needs_repair' 
+                ? 'px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700' 
+                : 'px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200';
+
+            render();
+        }
+
+        // Atualizar Métricas
+        function updateStats() {
+            const total = clothes.length;
+            const okCount = clothes.filter(i => i.status === 'ok').length;
+            const repairCount = clothes.filter(i => i.status === 'needs_repair').length;
+
+            document.getElementById('count-total').innerText = total;
+            document.getElementById('count-ok').innerText = okCount;
+            document.getElementById('count-repair').innerText = repairCount;
+
+            document.getElementById('stats-summary').innerHTML = `
+                <span>Total: <b>${total}</b></span>
+                <span>•</span>
+                <span class="text-amber-200">Em conserto: <b>${repairCount}</b></span>
+            `;
+        }
+
+        // Renderizar a lista na tela
+        function render() {
+            updateStats();
+            itemsList.innerHTML = '';
+
+            const filteredItems = clothes.filter(item => {
+                if (currentFilter === 'needs_repair') return item.status === 'needs_repair';
+                return true;
+            });
+
+            if (filteredItems.length === 0) {
+                itemsList.innerHTML = `
+                    <div class="bg-white p-8 text-center rounded-xl border border-slate-200 text-slate-400">
+                        Nenhuma peça encontrada nesta categoria.
+                    </div>
+                `;
+                return;
+            }
+
+            filteredItems.forEach(item => {
+                const isRepair = item.status === 'needs_repair';
+                const card = document.createElement('div');
+                card.className = `bg-white p-4 rounded-xl border ${isRepair ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200'} shadow-sm flex justify-between items-center`;
+
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-slate-800">${item.name}</span>
+                            <span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-500 border
